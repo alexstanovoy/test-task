@@ -1,0 +1,9 @@
+BasedOnStyle: LLVM
+---
+Language: C
+IndentWidth: 2
+AllowShortFunctionsOnASingleLine: false
+AllowShortIfStatementsOnASingleLine: false
+DerivePointerAlignment: false
+SortIncludes: true
+PointerAlignment: Left
