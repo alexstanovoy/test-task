@@ -27,7 +27,8 @@ void logger_destroy(struct s_logger* logger) {
   free(logger);
 }
 
-void default_logger_handler(struct s_logger* logger, LogLevel level, const char* format, va_list ap) {
+void default_logger_handler(struct s_logger* logger, LogLevel log_level, const char* format, va_list ap) {
+  (void)log_level;
   vfprintf(logger->logging_file, format, ap);
 }
 
@@ -41,19 +42,31 @@ void logging_error_handler(struct s_logger* logger, int err_no, const char* msg)
 }
 
 void handle_error(struct s_logger* logger, int err_no, const char* msg) {
+  if (logger == NULL || msg == NULL) {
+    exit(1);
+  }
   logger->error_handler(logger, err_no, msg);
 }
 
 void log_message(struct s_logger* logger, LogLevel log_level, const char* format, ...) {
+  if (logger == NULL || format == NULL) {
+    exit(1);
+  }
   va_list ap;
   va_start(ap, format);
   logger->logging_handler(logger, log_level, format, ap);
 }
 
 void set_error_handler(struct s_logger* logger, error_handler_fnc handler) {
+  if (logger == NULL || handler == NULL) {
+    exit(1);
+  }
   logger->error_handler = handler;
 }
 
 void set_logging_handler(struct s_logger* logger, logging_handler_fnc handler) {
+  if (logger == NULL || handler == NULL) {
+    exit(1);
+  }
   logger->logging_handler = handler;
 }
