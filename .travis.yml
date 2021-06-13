@@ -22,7 +22,9 @@ notifications:
     on_failure: never
 
 script:
-  - cmake CMakeLists.txt
+  - mkdir build
+  - cd build
+  - cmake ..
   - make
   - ctest
 
