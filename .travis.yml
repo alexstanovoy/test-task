@@ -4,6 +4,8 @@ branches:
   only:
    - master
 
+dist: focal
+
 addons:
   apt:
     packages:
