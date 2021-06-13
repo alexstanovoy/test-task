@@ -16,7 +16,6 @@ os:
 
 compiler:
   - gcc
-  - clang
 
 notifications:
   email:
