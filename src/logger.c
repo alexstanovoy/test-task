@@ -9,12 +9,12 @@ struct s_logger* logger_init(const char* log_file_name) {
   if (logger == NULL) {
     return NULL;
   }
-  logger_handler->logging_file = fopen(log_file_name, "w");
-  if (logger_handler->logging_file == NULL) {
+  logger->logging_file = fopen(log_file_name, "w");
+  if (logger->logging_file == NULL) {
     free(logger);
     return NULL;
   }
-  logger->logging_handler = default_log;
+  logger->logging_handler = default_logger_handler;
   logger->error_handler = default_error_handler;
   return logger;
 }
@@ -27,26 +27,27 @@ void logger_destroy(struct s_logger* logger) {
   free(logger);
 }
 
-void default_logger_handler(enum log_level level, const char* format, va_list ap) {
-  vfprintf(logging_file, format, ap);
+void default_logger_handler(struct s_logger* logger, LogLevel level, const char* format, va_list ap) {
+  vfprintf(logger->logging_file, format, ap);
 }
 
-void default_error_handler(int err_no, const char* msg) {
-  printf("Message %d, %s", err_no, msg);
+void default_error_handler(struct s_logger* logger, int err_no, const char* msg) {
+  (void)logger;
+  fprintf(stderr, "Message %d, %s", err_no, msg);
 }
 
-void logging_error_handler(int err_no, const char* msg) {
-  core_log_message(LogLevel::ERROR, "Message %d, %s", msg);
+void logging_error_handler(struct s_logger* logger, int err_no, const char* msg) {
+  log_message(logger, ERROR, "Message %d, %s", err_no, msg);
 }
 
 void handle_error(struct s_logger* logger, int err_no, const char* msg) {
-  logger->error_handler->handler(err_no, msg);
+  logger->error_handler(logger, err_no, msg);
 }
 
-void log_message(struct s_logger* logger, enum LogLevel log_level, const char* format, size_t count, ...) {
+void log_message(struct s_logger* logger, LogLevel log_level, const char* format, ...) {
   va_list ap;
-  va_start(ap, count);
-  logger->logging_handler(log_level, format, ap);
+  va_start(ap, format);
+  logger->logging_handler(logger, log_level, format, ap);
 }
 
 void set_error_handler(struct s_logger* logger, error_handler_fnc handler) {
