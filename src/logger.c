@@ -1,48 +1,58 @@
+#include <logger.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-typedef void (*error_handler_fnc)(int err_no, const char* msg);
-typedef void (*log_fnc)(enum log_level level, const char* format, va_list ap);
 
+struct s_logger* logger_init(const char* log_file_name) {
+  struct s_logger* logger = (struct s_logger*)malloc(sizeof(struct s_logger));
+  if (logger == NULL) {
+    return NULL;
+  }
+  logger_handler->logging_file = fopen(log_file_name, "w");
+  if (logger_handler->logging_file == NULL) {
+    free(logger);
+    return NULL;
+  }
+  logger->logging_handler = default_log;
+  logger->error_handler = default_error_handler;
+  return logger;
+}
 
-static FILE* logging_file = NULL;
-static struct s_core* core = NULL;
+void logger_destroy(struct s_logger* logger) {
+  if (logger == NULL) {
+    return;
+  }
+  fclose(logger->logging_file);
+  free(logger);
+}
 
-enum log_level {
-  TRACE,
-  DEBUG,
-  INFO,
-  WARNING,
-  ERROR,
-};
+void default_logger_handler(enum log_level level, const char* format, va_list ap) {
+  vfprintf(logging_file, format, ap);
+}
 
-struct s_error_handler {
-    error_handler_fnc handle_;
-};
+void default_error_handler(int err_no, const char* msg) {
+  printf("Message %d, %s", err_no, msg);
+}
 
-struct s_log {
-  log_fnc log_;
-};
+void logging_error_handler(int err_no, const char* msg) {
+  core_log_message(LogLevel::ERROR, "Message %d, %s", msg);
+}
 
-struct s_core {
-  struct s_error_handler* handler_;
-  struct s_log* log_;
-};
+void handle_error(struct s_logger* logger, int err_no, const char* msg) {
+  logger->error_handler->handler(err_no, msg);
+}
 
+void log_message(struct s_logger* logger, enum LogLevel log_level, const char* format, size_t count, ...) {
+  va_list ap;
+  va_start(ap, count);
+  logger->logging_handler(log_level, format, ap);
+}
 
-struct s_core* core_instance();
+void set_error_handler(struct s_logger* logger, error_handler_fnc handler) {
+  logger->error_handler = handler;
+}
 
-struct s_log* log_new(log_fnc logger);
-
-void log_destroy(struct s_log* logger);
-
-void default_log(enum log_level level, const char* format, va_list ap);
-
-void default_error_handler(int err_no, const char* msg);
-
-void core_handle_error(int err_no, const char* msg);
-
-void core_log_message(enum log_level level, const char* format, ...);
-
-void core_set_error_handler(error_handler_fnc handler);
+void set_logging_handler(struct s_logger* logger, logging_handler_fnc handler) {
+  logger->logging_handler = handler;
+}

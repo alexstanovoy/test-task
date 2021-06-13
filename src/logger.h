@@ -3,54 +3,36 @@
 #include <stdlib.h>
 
 
-struct s_core* core_instance() {
-  // Multithreading
-  if (core == NULL) {
-    core = (struct s_core*)malloc(sizeof(struct s_core));
-    core->log_ = log_new(default_log);
-    core->handler_ = error_handler_new(default_error_handler);
-  }
-  return core;
-}
+typedef void (*error_handler_fnc)(int err_no, const char* msg);
+typedef void (*logging_handler_fnc)(enum log_level level, const char* format, va_list ap);
 
-struct s_log* log_new(log_fnc logger) {
-  struct s_log* log_instance = (struct s_log*)malloc(sizeof(struct s_log));
-  log_instance->log_ = logger;
-  if (logging_file == NULL) {
-    logging_file = fopen("test.log", "rw");
-  }
-  return log_instance;
-}
+enum LogLevel {
+  TRACE,
+  DEBUG,
+  INFO,
+  WARNING,
+  ERROR,
+};
 
-void default_log(enum log_level level, const char* format, va_list ap) {
-  vfprintf(logging_file, format, ap);
-}
+struct s_logger {
+  error_handler_fnc error_handler;
+  logging_handler_fnc logging_handler;
+  FILE* logging_file;
+};
 
-struct s_error_handler* error_handler_new(error_handler_fnc handler) {
-  struct s_error_handler* handler_ = malloc(sizeof(handler));
-  handler_->handle_ = handler;
-  return handler_;
-}
 
-void default_error_handler(int err_no, const char* msg) {
-  printf("Message %d, %s", err_no, msg);
-}
+struct s_logger* logger_init();
 
-void logging_error_handler(int err_no, const char* msg) {
-  core_log_message(log_level_error, "Message %d, %s", msg);
-}
+void logger_destroy(struct s_logger* logger);
 
-void core_log_message(enum log_level level, const char* format, ...) {
-  va_list ap;
-  va_start(ap, format);
-  core_instance()->log_->log_(level, format, ap);
-}
+void default_logger_handler(enum log_level level, const char* format, va_list ap);
 
-void core_handle_error(int err_no, const char* msg) {
-  core_instance()->handler_->handle_(err_no, msg);
-}
+void default_error_handler(int err_no, const char* msg);
 
-void core_set_error_handler(error_handler_fnc handler) {
-  struct s_core* core = core_instance();
-  core->handler_->handle_ = handler;
-}
+void handle_error(struct s_logger* logger, int err_no, const char* msg);
+
+void log_message(struct s_logger* logger, enum log_level level, const char* format, ...);
+
+void set_error_handler(struct s_logger* logger, error_handler_fnc handler);
+
+void set_logging_handler(struct s_logger* logger, logging_handler_fnc handler);
